@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: transparent; /* 🔥 kľúč pre OBS */
+    background: transparent;
     overflow: hidden;
     font-family: Arial, sans-serif;
   }
@@ -20,7 +20,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     
-    background: rgba(0, 0, 0, 0.7); /* 🔥 transparentná čierna */
+    background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 25px 40px;
     border-radius: 12px;
@@ -38,6 +38,13 @@
 
 <script>
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
+
+// 🔊 MP3 URL
+const ALERT_SOUND_URL = "https://github.com/protectorebay/ALERTMP3/raw/refs/heads/main/alert.mp3";
+
+// vytvor audio objekt
+const alertSound = new Audio(ALERT_SOUND_URL);
+alertSound.volume = 1.0;
 
 let lastEventId = null;
 
@@ -74,9 +81,17 @@ function showAlert(place, time) {
 
   alertBox.style.display = "block";
 
+  // 🔊 prehratie zvuku
+  try {
+    alertSound.currentTime = 0;
+    alertSound.play().catch(e => console.log("Autoplay blocked:", e));
+  } catch (e) {
+    console.log(e);
+  }
+
   setTimeout(() => {
     alertBox.style.display = "none";
-  }, 120000); // 2 minúty
+  }, 120000);
 }
 
 setInterval(checkEarthquakes, 60000);
