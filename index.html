@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Earthquake Monitor</title>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent; /* 🔥 kľúč pre OBS */
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+
+  #alert {
+    display: none;
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    background: rgba(0, 0, 0, 0.7); /* 🔥 transparentná čierna */
+    color: white;
+    padding: 25px 40px;
+    border-radius: 12px;
+    font-size: 22px;
+    text-align: center;
+
+    border: 2px solid red;
+    box-shadow: 0 0 20px red;
+  }
+</style>
+</head>
+<body>
+
+<div id="alert"></div>
+
+<script>
+const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
+
+let lastEventId = null;
+
+async function checkEarthquakes() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    if (!data.features.length) return;
+
+    const latest = data.features[0];
+
+    if (latest.id !== lastEventId) {
+      lastEventId = latest.id;
+
+      const place = latest.properties.place;
+      const time = new Date(latest.properties.time).toUTCString();
+
+      showAlert(place, time);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function showAlert(place, time) {
+  const alertBox = document.getElementById("alert");
+
+  alertBox.innerHTML = `
+    ⚠️ <strong>Attention! New Earthquake Detected</strong><br><br>
+    📍 ${place}<br>
+    🕒 ${time}
+  `;
+
+  alertBox.style.display = "block";
+
+  setTimeout(() => {
+    alertBox.style.display = "none";
+  }, 120000); // 2 minúty
+}
+
+setInterval(checkEarthquakes, 60000);
+checkEarthquakes();
+</script>
+
+</body>
+</html>
