@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -20,7 +20,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     color: white;
     padding: 25px 40px;
     border-radius: 12px;
@@ -29,24 +29,40 @@
 
     border: 2px solid red;
     box-shadow: 0 0 20px red;
+
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 10px red; }
+    50%  { box-shadow: 0 0 30px red; }
+    100% { box-shadow: 0 0 10px red; }
+  }
+
+  #timeAgo {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #ccc;
   }
 </style>
 </head>
 <body>
 
-<div id="alert"></div>
+<div id="alert">
+  <div id="content"></div>
+  <div id="timeAgo"></div>
+</div>
 
 <script>
 const API_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
-
-// 🔊 MP3 URL
 const ALERT_SOUND_URL = "https://github.com/protectorebay/ALERTMP3/raw/refs/heads/main/alert.mp3";
 
-// vytvor audio objekt
 const alertSound = new Audio(ALERT_SOUND_URL);
 alertSound.volume = 1.0;
 
 let lastEventId = null;
+let eventTime = null;
+let timerInterval = null;
 
 async function checkEarthquakes() {
   try {
@@ -61,40 +77,62 @@ async function checkEarthquakes() {
       lastEventId = latest.id;
 
       const place = latest.properties.place;
-      const time = new Date(latest.properties.time).toUTCString();
+      eventTime = latest.properties.time;
 
-      showAlert(place, time);
+      showAlert(place, eventTime);
     }
   } catch (err) {
-    console.error(err);
+    console.error("Error loading data:", err);
   }
 }
 
 function showAlert(place, time) {
   const alertBox = document.getElementById("alert");
+  const content = document.getElementById("content");
 
-  alertBox.innerHTML = `
-    ⚠️ <strong>Attention! New Earthquake Detected</strong><br><br>
-    📍 ${place}<br>
-    🕒 ${time}
+  content.innerHTML = `
+    ⚠️ <strong>New Earthquake Detected</strong><br><br>
+    📍 ${place}
   `;
 
   alertBox.style.display = "block";
 
-  // 🔊 prehratie zvuku
+  // 🔊 sound
   try {
     alertSound.currentTime = 0;
     alertSound.play().catch(e => console.log("Autoplay blocked:", e));
-  } catch (e) {
-    console.log(e);
-  }
+  } catch (e) {}
 
-  setTimeout(() => {
-    alertBox.style.display = "none";
-  }, 120000);
+  // reset timer
+  if (timerInterval) clearInterval(timerInterval);
+
+  updateTimeAgo();
+  timerInterval = setInterval(updateTimeAgo, 1000);
 }
 
+function updateTimeAgo() {
+  if (!eventTime) return;
+
+  const now = Date.now();
+  const diff = Math.floor((now - eventTime) / 1000);
+
+  let text = "";
+
+  if (diff < 60) {
+    text = `${diff} seconds ago`;
+  } else if (diff < 3600) {
+    text = `${Math.floor(diff / 60)} minutes ago`;
+  } else {
+    text = `${Math.floor(diff / 3600)} hours ago`;
+  }
+
+  document.getElementById("timeAgo").innerText = text;
+}
+
+// každú minútu kontrola
 setInterval(checkEarthquakes, 60000);
+
+// prvý run
 checkEarthquakes();
 </script>
 
